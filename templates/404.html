@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found — WorldCereal Explorer{% endblock %}
+
+{% block body %}
+  <div style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 24px;
+    font-family: 'Inter', system-ui, sans-serif;
+  ">
+    <div style="font-size: 80px; font-weight: 800; color: #e2e8f0; line-height: 1;">404</div>
+    <h1 style="font-size: 20px; font-weight: 600; color: #334155; margin: 16px 0 8px;">Page not found</h1>
+    <p style="font-size: 14px; color: #64748b; margin-bottom: 24px;">The page you're looking for doesn't exist.</p>
+    <a href="{{ url_for('index') }}" style="
+      display: inline-block;
+      padding: 10px 24px;
+      background: #2d7d3a;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    ">Go Home</a>
+  </div>
+{% endblock %}
