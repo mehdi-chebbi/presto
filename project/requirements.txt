@@ -1,0 +1,15 @@
+flask>=3.0
+python-dotenv>=1.0
+requests>=2.31
+openeo>=0.30
+openeo-gfmap>=0.4
+rasterio
+numpy
+Pillow
+matplotlib
+# rio-tiler is optional but much faster for tile rendering:
+rio-tiler
+geopandas
+shapely
+# worldcereal is NOT on PyPI — install from GitHub:
+# pip install "worldcereal @ git+https://github.com/WorldCereal/worldcereal-classification.git"

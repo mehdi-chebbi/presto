@@ -1,0 +1,846 @@
+{% extends "base.html" %}
+
+{% block title %}Map — WorldCereal Explorer{% endblock %}
+
+{% block extra_head %}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <style>
+    /* ── Map Page Styles ─────────────────────────────────────────────── */
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    /* Top bar */
+    .top-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #1e5a28, #2d7d3a, #f5c842);
+    }
+
+    /* Nav */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      z-index: 1000;
+      position: relative;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #1e293b;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #1e5a28, #2d7d3a);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-logo-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: white;
+    }
+
+    .nav-logo span { color: #2d7d3a; }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .nav-user-name {
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .btn-logout:hover {
+      background: #e2e8f0;
+      color: #334155;
+      text-decoration: none;
+    }
+
+    .btn-logout svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Map container */
+    .map-wrapper {
+      position: relative;
+      height: calc(100vh - 58px);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Side panel */
+    .side-panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      width: 320px;
+      max-height: calc(100vh - 90px);
+      overflow-y: auto;
+    }
+
+    .panel-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .panel-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .panel-header p {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .panel-body {
+      padding: 14px 18px 18px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: white;
+      color: #1e293b;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #2d7d3a;
+      box-shadow: 0 0 0 3px rgba(45, 125, 58, 0.1);
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .form-hint.warn {
+      color: #d97706;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      color: white;
+      background: linear-gradient(135deg, #1e5a28, #2d7d3a);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #2d7d3a, #3a9e4a);
+      box-shadow: 0 2px 8px rgba(45, 125, 58, 0.3);
+    }
+
+    .btn-submit:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    /* Status box */
+    .status-box {
+      margin-top: 14px;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .status-box.visible { display: block; }
+
+    .status-text { margin-bottom: 8px; color: #475569; white-space: pre-wrap; }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #2d7d3a;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Legend */
+    .legend {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+      font-size: 12px;
+      display: none;
+    }
+
+    .legend.visible { display: block; }
+
+    .legend-title {
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+      color: #64748b;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      border: 1px solid #e2e8f0;
+    }
+
+    .legend-gradient {
+      width: 100%;
+      height: 14px;
+      border-radius: 3px;
+      margin-bottom: 4px;
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      font-size: 11px;
+    }
+
+    .legend-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .legend-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* WorldCereal badge */
+    .wc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+    .wc-badge.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .wc-badge.fallback {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .side-panel {
+        position: absolute;
+        top: auto;
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-height: 50vh;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+
+  <div class="top-bar"></div>
+
+  <!-- Navigation bar -->
+  <nav class="nav-bar">
+    <a href="{{ url_for('map_page') }}" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+      </div>
+      World<span>Cereal</span>
+    </a>
+    <div class="nav-user">
+      <span class="nav-user-name">{{ user.preferred_username or user.email or 'User' }}</span>
+      <a href="{{ url_for('auth_logout') }}" class="btn-logout">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+        </svg>
+        Sign out
+      </a>
+    </div>
+  </nav>
+
+  <!-- Map + Side Panel -->
+  <div class="map-wrapper">
+    <div id="map"></div>
+
+    <div class="side-panel">
+      <div class="panel-header">
+        <h3>Land Cover Classification</h3>
+        <p>Draw a polygon, pick dates, submit to CDSE</p>
+      </div>
+      <div class="panel-body">
+        <!-- Product Type -->
+        <div class="form-group">
+          <label for="product-type">Product type</label>
+          <select id="product-type">
+            <option value="landcover">Land cover (10 classes)</option>
+            <option value="cropland">Cropland mask (binary)</option>
+            <option value="croptype">Crop type (multi-class)</option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="form-group">
+          <label for="start-date">Observation start</label>
+          <input type="date" id="start-date" value="2022-11-01" />
+          <div class="form-hint" id="date-hint">Must span a full year for cropland</div>
+        </div>
+        <div class="form-group">
+          <label for="end-date">Observation end</label>
+          <input type="date" id="end-date" value="2023-10-31" />
+        </div>
+
+        <!-- Submit -->
+        <button id="submit-btn" class="btn-submit" disabled>Draw a polygon first</button>
+
+        <!-- Status -->
+        <div id="status-box" class="status-box">
+          <div id="status-text" class="status-text">Queued...</div>
+          <div class="progress-bar-bg">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- NDVI Legend (shown for demo/fallback) -->
+        <div id="legend-ndvi" class="legend">
+          <div class="legend-title">NDVI (Demo — not classification)</div>
+          <div class="legend-gradient" style="background: linear-gradient(90deg, #8b5a2b, #ffe600, #00b400);"></div>
+          <div class="legend-labels">
+            <span>-1.0 (Bare)</span>
+            <span>0.0</span>
+            <span>1.0 (Dense veg)</span>
+          </div>
+        </div>
+
+        <!-- Landcover Legend (class order matches model output indices) -->
+        <div id="legend-landcover" class="legend">
+          <div class="legend-title">Land Cover Classification</div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #ffff00;"></div>
+            <span>Temporary Crops</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #adff2f;"></div>
+            <span>Temporary Grasses</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #d2b48c;"></div>
+            <span>Bare / Sparse Vegetation</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #ffa500;"></div>
+            <span>Permanent Crops / Orchards</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #90ee90;"></div>
+            <span>Grasslands</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #00aaaa;"></div>
+            <span>Wetlands</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #bdb878;"></div>
+            <span>Shrubland</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #006400;"></div>
+            <span>Trees / Forest</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #c83232;"></div>
+            <span>Built-up</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #0064c8;"></div>
+            <span>Water</span>
+          </div>
+        </div>
+
+        <!-- Cropland Legend -->
+        <div id="legend-cropland" class="legend">
+          <div class="legend-title">Cropland Classification</div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #228b22;"></div>
+            <span>Cropland</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
+            <span>Non-cropland (transparent)</span>
+          </div>
+        </div>
+
+        <!-- Croptype Legend -->
+        <div id="legend-croptype" class="legend">
+          <div class="legend-title">Crop Type Classification</div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #ffc800;"></div>
+            <span>Maize</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #b48246;"></div>
+            <span>Wheat</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #dcb482;"></div>
+            <span>Barley</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #b4dc32;"></div>
+            <span>Rapeseed / Canola</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #ffa500;"></div>
+            <span>Sunflower</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #009600;"></div>
+            <span>Soybean</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #a06432;"></div>
+            <span>Potato</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #64b4ff;"></div>
+            <span>Sugar beet</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #50c878;"></div>
+            <span>Temporary grassland</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #0064c8;"></div>
+            <span>Rice</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #c864c8;"></div>
+            <span>Other crop</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
+            <span>Non-cropland / no data</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <script>
+    // ── Map Setup ───────────────────────────────────────────────────────
+    const map = L.map('map').setView([50.3, 6.73], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // ── Draw Control ────────────────────────────────────────────────────
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polygon: { allowIntersection: false, showArea: true },
+        rectangle: true,
+        polyline: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
+      },
+      edit: { featureGroup: drawnItems, remove: true },
+    });
+    map.addControl(drawControl);
+
+    let currentGeoJSON = null;
+    let currentProductType = 'landcover';
+    let resultTileLayer = null;
+    let pollInterval = null;
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(e.layer);
+      currentGeoJSON = e.layer.toGeoJSON().geometry;
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = false;
+      btn.textContent = 'Submit Classification Job';
+    });
+
+    // ── Product Type Change ─────────────────────────────────────────────
+    document.getElementById('product-type').addEventListener('change', function () {
+      currentProductType = this.value;
+      updateDateHint();
+    });
+
+    function updateDateHint() {
+      const hint = document.getElementById('date-hint');
+      if (currentProductType === 'cropland' || currentProductType === 'landcover') {
+        hint.textContent = 'Must span a full year (e.g. Nov 2022 → Oct 2023)';
+        hint.classList.remove('warn');
+      } else {
+        hint.textContent = 'Full year observation + crop season. Default: Nov 2022 → Oct 2023';
+        hint.classList.add('warn');
+      }
+    }
+
+    // ── Toast Utility ───────────────────────────────────────────────────
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    // ── Show/Hide Legends ───────────────────────────────────────────────
+    function showLegend(productType, isWorldcereal) {
+      document.getElementById('legend-ndvi').classList.remove('visible');
+      document.getElementById('legend-cropland').classList.remove('visible');
+      document.getElementById('legend-croptype').classList.remove('visible');
+      document.getElementById('legend-landcover').classList.remove('visible');
+
+      if (!isWorldcereal) {
+        document.getElementById('legend-ndvi').classList.add('visible');
+      } else if (productType === 'landcover') {
+        document.getElementById('legend-landcover').classList.add('visible');
+      } else if (productType === 'cropland') {
+        document.getElementById('legend-cropland').classList.add('visible');
+      } else {
+        document.getElementById('legend-croptype').classList.add('visible');
+      }
+    }
+
+    // ── Submit Job ──────────────────────────────────────────────────────
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      if (!currentGeoJSON) return;
+
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+      const productType = document.getElementById('product-type').value;
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const statusBox = document.getElementById('status-box');
+      statusBox.classList.add('visible');
+      document.getElementById('status-text').textContent = 'Submitting job to CDSE...';
+      document.getElementById('progress-fill').style.width = '5%';
+
+      // Remove previous result layer and hide all legends
+      if (resultTileLayer) {
+        map.removeLayer(resultTileLayer);
+        resultTileLayer = null;
+      }
+      showLegend(null, false);
+
+      try {
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            geometry: currentGeoJSON,
+            start_date: startDate,
+            end_date: endDate,
+            product_type: productType,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          let errorMsg = data.error || 'Unknown error';
+          if (data.detail) {
+            errorMsg += '\n\n' + data.detail;
+          }
+          document.getElementById('status-text').textContent = 'Error: ' + errorMsg;
+          console.error('Submit error:', response.status, data);
+          btn.disabled = false;
+          btn.textContent = 'Retry';
+          return;
+        }
+
+        if (data.job_id) {
+          showToast('Job submitted! ID: ' + data.job_id);
+          startPolling(data.job_id, productType);
+        } else {
+          showToast('No job_id returned. Check server logs.');
+          btn.disabled = false;
+          btn.textContent = 'Submit Classification Job';
+          statusBox.classList.remove('visible');
+        }
+
+      } catch (err) {
+        document.getElementById('status-text').textContent = 'Network error: ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'Retry';
+      }
+    });
+
+    // ── Polling ─────────────────────────────────────────────────────────
+    const STATUS_LABELS = {
+      queued: 'Queued — waiting for CDSE worker...',
+      running: 'Running classification on CDSE cloud...',
+      finished: 'Finished! Downloading result...',
+      error: 'Job failed — see details below.',
+    };
+
+    const PROGRESS_MAP = { queued: 10, running: 60, finished: 85, error: 0 };
+
+    function startPolling(jobId, productType) {
+      clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/status/' + jobId);
+          const data = await res.json();
+
+          document.getElementById('status-text').textContent =
+            STATUS_LABELS[data.status] || ('Status: ' + data.status);
+          document.getElementById('progress-fill').style.width =
+            (PROGRESS_MAP[data.status] || 0) + '%';
+
+          if (data.status === 'finished') {
+            clearInterval(pollInterval);
+            handleJobFinished(jobId, productType);
+          } else if (data.status === 'error') {
+            clearInterval(pollInterval);
+            let errMsg = 'Job failed on the backend.';
+            if (data.error) errMsg = data.error;
+            if (data.logs && data.logs.length) {
+              errMsg += '\n\n' + data.logs.slice(-5).join('\n');
+            }
+            document.getElementById('status-text').textContent = errMsg;
+            document.getElementById('progress-fill').style.width = '0%';
+            console.error('Job error:', data);
+            const btn = document.getElementById('submit-btn');
+            btn.textContent = 'Retry';
+            btn.disabled = false;
+          }
+        } catch (err) {
+          // Silently retry on next interval
+        }
+      }, 10000);
+    }
+
+    // ── Handle Job Finished: Download → Show Tiles ──────────────────────
+    async function handleJobFinished(jobId, productType) {
+      const statusText = document.getElementById('status-text');
+      const progressFill = document.getElementById('progress-fill');
+
+      try {
+        // Step 1: Trigger download from CDSE
+        statusText.textContent = 'Downloading result from CDSE...';
+        progressFill.style.width = '90%';
+
+        const dlRes = await fetch('/api/download/' + jobId);
+        const dlData = await dlRes.json();
+
+        if (!dlRes.ok || dlData.error) {
+          statusText.textContent = 'Download failed: ' + (dlData.error || 'Unknown error');
+          console.error('Download error:', dlData);
+          const btn = document.getElementById('submit-btn');
+          btn.textContent = 'Retry Download';
+          btn.disabled = false;
+          return;
+        }
+
+        console.log('Download result:', dlData);
+
+        // Step 2: Show tiles on map
+        statusText.textContent = 'Result ready! Loading map overlay...';
+        progressFill.style.width = '100%';
+
+        showResultTiles(jobId, dlData.bounds);
+
+        // Step 3: Show appropriate legend based on actual backend response
+        const isWC = dlData.worldcereal === true;
+        const pType = dlData.product_type || productType;
+        showLegend(pType, isWC);
+
+        let label;
+        if (pType === 'landcover') label = 'Land Cover';
+        else if (pType === 'croptype') label = 'Crop Type';
+        else label = 'Cropland';
+        const mode = isWC ? label + ' classification' : 'NDVI (demo)';
+        statusText.textContent = 'Done! ' + mode + ' displayed on map.';
+
+        const btn = document.getElementById('submit-btn');
+        btn.textContent = 'Submit New Job';
+        btn.disabled = false;
+
+        showToast('Classification result loaded!', 4000);
+
+      } catch (err) {
+        statusText.textContent = 'Download error: ' + err.message;
+        console.error('Download fetch error:', err);
+        const btn = document.getElementById('submit-btn');
+        btn.textContent = 'Retry';
+        btn.disabled = false;
+      }
+    }
+
+    // ── Show Result Tiles on Map ────────────────────────────────────────
+    function showResultTiles(jobId, bounds) {
+      if (resultTileLayer) {
+        map.removeLayer(resultTileLayer);
+      }
+
+      resultTileLayer = L.tileLayer('/tiles/' + jobId + '/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        minZoom: 6,
+        opacity: 0.75,
+        attribution: '&copy; WorldCereal / ESA Sentinel / openEO / CDSE',
+      });
+
+      resultTileLayer.addTo(map);
+
+      if (bounds) {
+        const corner1 = L.latLng(bounds.north, bounds.west);
+        const corner2 = L.latLng(bounds.south, bounds.east);
+        const bbox = L.latLngBounds(corner1, corner2);
+        map.fitBounds(bbox, { padding: [40, 40], maxZoom: 14 });
+      }
+    }
+
+    // ── Initialize date hint ────────────────────────────────────────────
+    updateDateHint();
+  </script>
+{% endblock %}

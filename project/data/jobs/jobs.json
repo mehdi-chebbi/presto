@@ -1,0 +1,89 @@
+{
+  "j-26050521533148cdb8cc6a5e6878e288": {
+    "status": "running",
+    "created_at": "2026-05-05T21:53:46.907936+00:00",
+    "product_type": "cropland",
+    "start_date": "2022-11-01",
+    "end_date": "2023-10-31",
+    "geometry_type": "Polygon",
+    "title": "WorldCereal cropland | 2022-11-01 to 2023-10-31",
+    "worldcereal": false,
+    "updated_at": "2026-05-05T21:54:18.950289+00:00"
+  },
+  "j-260505215521476b89a1eafe5fddc567": {
+    "status": "finished",
+    "created_at": "2026-05-05T21:55:37.981811+00:00",
+    "product_type": "cropland",
+    "start_date": "2022-11-01",
+    "end_date": "2023-10-31",
+    "geometry_type": "Polygon",
+    "title": "WorldCereal cropland | 2022-11-01 to 2023-10-31",
+    "worldcereal": true,
+    "updated_at": "2026-05-05T22:08:03.068377+00:00",
+    "result_path": "C:\\Users\\mehdi\\Downloads\\workspace-b0782a8b-80b9-45f6-90de-1e4a34130b6f (5)\\flask_worldcereal\\data\\results\\j-260505215521476b89a1eafe5fddc567\\cropland_2022-11-01_2023-10-31.tif",
+    "bounds": {
+      "west": 6.597481956687083,
+      "south": 50.28357353252521,
+      "east": 6.6361526682315635,
+      "north": 50.29756233728756
+    },
+    "downloaded_at": "2026-05-05T22:08:07.273370+00:00"
+  },
+  "j-2605052210294e59b8e3b870d74cd287": {
+    "status": "finished",
+    "created_at": "2026-05-05T22:11:04.608260+00:00",
+    "product_type": "croptype",
+    "start_date": "2022-11-01",
+    "end_date": "2023-10-31",
+    "geometry_type": "Polygon",
+    "title": "WorldCereal croptype | 2022-11-01 to 2023-10-31",
+    "worldcereal": true,
+    "updated_at": "2026-05-05T22:22:28.259909+00:00",
+    "result_path": "C:\\Users\\mehdi\\Downloads\\workspace-b0782a8b-80b9-45f6-90de-1e4a34130b6f (5)\\flask_worldcereal\\data\\results\\j-2605052210294e59b8e3b870d74cd287\\croptype_2022-11-01_2023-10-31_annual_[2022-11-01_2023-10-31].tif",
+    "bounds": {
+      "west": 6.597481956687083,
+      "south": 50.28357353252521,
+      "east": 6.6361526682315635,
+      "north": 50.29756233728756
+    },
+    "downloaded_at": "2026-05-05T22:22:32.466681+00:00"
+  },
+  "j-26050817503248efb24f8da1687f8889": {
+    "status": "finished",
+    "created_at": "2026-05-08T17:51:07.147504+00:00",
+    "product_type": "landcover",
+    "start_date": "2022-11-01",
+    "end_date": "2023-10-31",
+    "geometry_type": "Polygon",
+    "title": "WorldCereal landcover | 2022-11-01 to 2023-10-31",
+    "worldcereal": true,
+    "updated_at": "2026-05-08T18:02:40.221646+00:00",
+    "result_path": "C:\\Users\\mehdi\\Downloads\\workspace-0b1221d6-64cb-4ba8-b088-3502d579ac19 (1)\\project\\data\\results\\j-26050817503248efb24f8da1687f8889\\cropland_2022-11-01_2023-10-31.tif",
+    "bounds": {
+      "west": 6.659054058493222,
+      "south": 50.276391524068856,
+      "east": 6.714115898000379,
+      "north": 50.30792181294328
+    },
+    "downloaded_at": "2026-05-08T18:02:43.966613+00:00"
+  },
+  "j-2605081851454d1687e0b83c2ad520f7": {
+    "status": "finished",
+    "created_at": "2026-05-08T18:52:05.059471+00:00",
+    "product_type": "landcover",
+    "start_date": "2022-11-01",
+    "end_date": "2023-10-31",
+    "geometry_type": "Polygon",
+    "title": "WorldCereal landcover | 2022-11-01 to 2023-10-31",
+    "worldcereal": true,
+    "updated_at": "2026-05-08T19:05:26.849446+00:00",
+    "result_path": "C:\\Users\\mehdi\\Downloads\\workspace-0b1221d6-64cb-4ba8-b088-3502d579ac19 (1)\\project\\data\\results\\j-2605081851454d1687e0b83c2ad520f7\\cropland_2022-11-01_2023-10-31.tif",
+    "bounds": {
+      "west": 6.7025984754287276,
+      "south": 50.30163120625921,
+      "east": 6.742693066444653,
+      "north": 50.32791454414132
+    },
+    "downloaded_at": "2026-05-08T19:05:31.873661+00:00"
+  }
+}

@@ -1,0 +1,466 @@
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional, Sequence
+
+import ipywidgets as widgets
+import pandas as pd
+from IPython.core.display import HTML as core_HTML
+from IPython.display import display
+from loguru import logger
+from openeo_gfmap import TemporalContext
+
+
+@dataclass(frozen=True)
+class SeasonSelection:
+    season_window: TemporalContext
+    processing_period: TemporalContext
+
+
+class date_slider:
+    """Interactive season picker that derives the processing window automatically.
+
+    Users pick the exact growing-season window (max 12 months, aligned to calendar months)
+    and we derive a processing period that always spans one year ending on the season end.
+    """
+
+    def __init__(
+        self,
+        start_date=datetime(2017, 1, 1),
+        end_date=datetime(2025, 12, 31),
+        show_year=True,
+        display_interval=2,
+        title="Select growing season window:",
+        max_window_months: int = 12,
+        min_window_months: int = 3,
+        default_window_months: int = 6,
+        *,
+        year_selector: bool = True,
+        year_selector_years: Optional[Sequence[int]] = None,
+        year_selector_initial: Optional[int] = None,
+        year_selector_months_before: int = 6,
+        year_selector_months_after: int = 6,
+        initial_window: Optional[TemporalContext] = None,
+    ):
+        self.show_year = show_year
+        self.max_window_months = max(1, max_window_months)
+        self.min_window_months = max(1, min(min_window_months, self.max_window_months))
+        self.processing_months = 12
+        self.default_window_months = max(
+            self.min_window_months, min(default_window_months, self.max_window_months)
+        )
+        self.display_interval = max(1, display_interval)
+        self._title = title
+        self._base_start_date = start_date
+        self._base_end_date = end_date
+        self.year_selector = year_selector
+        self.year_selector_months_before = max(0, year_selector_months_before)
+        self.year_selector_months_after = max(0, year_selector_months_after)
+        self.interval_slider: widgets.SelectionRangeSlider
+        self.html_text: widgets.HTML
+        self._year_dropdown: Optional[widgets.Dropdown] = None
+
+        # Parse initial_window into start/exclusive-end timestamps used by
+        # _build_slider to snap the handles to the right positions.
+        self._initial_start: Optional[pd.Timestamp] = None
+        self._initial_end_exclusive: Optional[pd.Timestamp] = None
+        if initial_window is not None:
+            try:
+                ws = pd.Timestamp(initial_window.start_date)
+                we = pd.Timestamp(initial_window.end_date)
+                self._initial_start = ws.replace(day=1)
+                # The slider uses an exclusive-end convention: the end handle
+                # sits at the first day of the month *after* the last included
+                # month, so add one month to the season-end month.
+                we_first = we.replace(day=1)
+                self._initial_end_exclusive = we_first + pd.DateOffset(months=1)
+                # Auto-select the year in the dropdown to the season start year
+                # (only if the caller has not already provided an explicit value).
+                if year_selector and year_selector_initial is None:
+                    year_selector_initial = ws.year
+            except Exception:
+                pass
+
+        custom_css = self._build_custom_css()
+        descr_widget = widgets.HTML(
+            value=f"""
+            <div style='text-align: center;'>
+                <div style='font-size: 20px; font-weight: bold;'>
+                    {title}
+                </div>
+            </div>
+            """
+        )
+        self._slider_output = widgets.Output()
+        container_children = [descr_widget]
+
+        if self.year_selector:
+            years = (
+                list(range(start_date.year, end_date.year + 1))
+                if not year_selector_years
+                else sorted(set(year_selector_years))
+            )
+            if not years:
+                years = [datetime.utcnow().year]
+            initial_year = year_selector_initial or max(years)
+            if initial_year not in years:
+                initial_year = max(years)
+            self._year_dropdown = widgets.Dropdown(
+                options=years,
+                value=initial_year,
+                description="Season year",
+                layout=widgets.Layout(width="220px"),
+            )
+            self._year_dropdown.observe(self._on_year_selector_change, names="value")
+            container_children.append(self._year_dropdown)
+            self._current_year = initial_year
+        else:
+            self._current_year = None
+
+        container_children.append(self._slider_output)
+        container = widgets.VBox(
+            container_children,
+            layout=widgets.Layout(
+                align_items="center", justify_content="center", width="780px"
+            ),
+        )
+
+        display(core_HTML(custom_css))
+        display(container)
+        self._render_slider(self._current_year)
+
+    def _build_custom_css(self) -> str:
+        return """
+        <style>
+        .widget-container {
+            padding-left: 10px;
+            box-sizing: border-box;
+            width: 700px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .slider-container {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .slider-container .tick-wrapper {
+            position: relative;
+            width: 100%;
+            height: 40px;
+        }
+        .slider-container .tick-mark {
+            position: absolute;
+            bottom: 25px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .slider-container .tick-label {
+            position: absolute;
+            bottom: 0;
+            transform: translateX(-50%);
+            font-size: 10px;
+            text-align: center;
+            line-height: 1.2em;
+        }
+        </style>
+        """
+
+    def _render_slider(self, focus_year: Optional[int]):
+        if focus_year is not None:
+            center = pd.Timestamp(focus_year, 1, 1)
+            start_date = (
+                center - pd.DateOffset(months=self.year_selector_months_before)
+            ).to_pydatetime()
+            end_date = (
+                center + pd.DateOffset(months=11 + self.year_selector_months_after)
+            ).to_pydatetime()
+        else:
+            start_date = self._base_start_date
+            end_date = self._base_end_date
+
+        with self._slider_output:
+            self._slider_output.clear_output()
+            slider_widget = self._build_slider(start_date, end_date, focus_year)
+            display(slider_widget)
+
+    def _build_slider(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        focus_year: Optional[int] = None,
+    ) -> widgets.VBox:
+        # Extend by one extra month so the end handle uses an exclusive-end
+        # convention: handle at month M means the season ends on the last day
+        # of month M-1. This makes the end handle sit visually one step past
+        # the last included month, matching user intuition.
+        dates = pd.date_range(
+            start_date,
+            pd.to_datetime(end_date) + pd.DateOffset(months=1),
+            freq="MS",
+        )
+        # Always use year-qualified labels to guarantee uniqueness.
+        # Duplicate labels cause an infinite internal loop in ipywidgets
+        # (_propagate_label ↔ _propagate_index) when the same month name
+        # appears more than once across years. The labels are never shown
+        # to the user (readout=False) — the visual tick marks are separate HTML.
+        options = [(date.strftime("%b %Y"), date) for date in dates]
+
+        default_start_index = 0
+        if self._initial_start is not None and focus_year == self._initial_start.year:
+            # Snap to the month specified by the initial window.
+            for idx, date in enumerate(dates):
+                if (
+                    date.year == self._initial_start.year
+                    and date.month == self._initial_start.month
+                ):
+                    default_start_index = idx
+                    break
+            # Exclusive end: find the month *after* the season-end month.
+            default_end_index = min(
+                len(dates) - 1, default_start_index + self.default_window_months
+            )
+            if self._initial_end_exclusive is not None:
+                for idx, date in enumerate(dates):
+                    if (
+                        date.year == self._initial_end_exclusive.year
+                        and date.month == self._initial_end_exclusive.month
+                    ):
+                        default_end_index = idx
+                        break
+        elif focus_year is not None:
+            for idx, date in enumerate(dates):
+                if date.year == focus_year:
+                    default_start_index = idx
+                    break
+            default_end_index = min(
+                len(dates) - 1, default_start_index + self.default_window_months
+            )
+        else:
+            default_end_index = min(
+                len(dates) - 1, default_start_index + self.default_window_months
+            )
+
+        self.interval_slider = widgets.SelectionRangeSlider(
+            options=options,
+            value=(dates[default_start_index], dates[default_end_index]),
+            orientation="horizontal",
+            description="",
+            continuous_update=False,
+            behaviour="drag",
+            style={"handle_color": "dodgerblue"},
+            layout=widgets.Layout(width="700px", margin="0 0 0 10px"),
+            readout=False,
+        )
+        self.interval_slider.observe(self.on_slider_change, names="value")
+
+        self.html_text = widgets.HTML(
+            value="",
+            placeholder="HTML placeholder",
+            description="",
+            layout=widgets.Layout(justify_content="center", display="flex"),
+        )
+
+        frequency = f"{self.display_interval}MS"
+        tick_dates = pd.date_range(
+            start_date,
+            pd.to_datetime(end_date) + pd.DateOffset(months=1),
+            freq=frequency,
+        )
+        if self.show_year:
+            tick_labels = [date.strftime("%b %Y") for date in tick_dates]
+        else:
+            tick_labels = [date.strftime("%b") for date in tick_dates]
+        # Total number of monthly steps in the slider (n options → n-1 intervals)
+        # dates now has one extra month appended for the exclusive end handle.
+        n_slider_steps = max(1, len(dates) - 1)
+        slider_start = dates[0]
+        ticks_html = ""
+        for date, label in zip(tick_dates, tick_labels):
+            # Position each tick by its distance from slider start, in months
+            months_from_start = (date.year - slider_start.year) * 12 + (
+                date.month - slider_start.month
+            )
+            position = min(100.0, (months_from_start / n_slider_steps) * 100)
+            parts = label.split(" ") if " " in label else [label, ""]
+            top_label = parts[0]
+            bottom_label = parts[1] if len(parts) > 1 else ""
+            ticks_html += f"""
+            <div class="tick-mark" style="left: {position:.4f}%; ">|</div>
+            <div class="tick-label" style="left: {position:.4f}%; ">{top_label}<br>{bottom_label}</div>
+            """
+
+        tick_marks_and_labels = widgets.HTML(
+            value=f"""
+        <div class="widget-container">
+            <div class="slider-container">
+                <div class="tick-wrapper">
+                    {ticks_html}
+                </div>
+            </div>
+        </div>
+        """
+        )
+
+        slider_with_ticks = widgets.VBox(
+            [self.interval_slider, tick_marks_and_labels],
+            layout=widgets.Layout(
+                width="740px", align_items="center", justify_content="center"
+            ),
+        )
+
+        vbox = widgets.VBox(
+            [slider_with_ticks, self.html_text],
+            layout=widgets.Layout(
+                align_items="center", justify_content="center", width="750px"
+            ),
+        )
+
+        self._update_summary(*self.interval_slider.value)
+        return vbox
+
+    def _on_year_selector_change(self, change):
+        if (
+            change.get("name") == "value"
+            and change.get("new") is not None
+            and change.get("new") != change.get("old")
+        ):
+            self._current_year = change["new"]
+            self._render_slider(self._current_year)
+
+    def on_slider_change(self, change):
+        start, end = change["new"]
+        # With exclusive-end, the number of selected months = steps between handles
+        months_selected = self._get_month_span(start, end)
+        n_opts = len(self.interval_slider.options)
+        start_idx, end_idx = self.interval_slider.index
+
+        clamped_index = None
+        if months_selected > self.max_window_months:
+            new_end_idx = min(n_opts - 1, start_idx + self.max_window_months)
+            clamped_index = (start_idx, new_end_idx)
+        elif months_selected < self.min_window_months:
+            new_end_idx = start_idx + self.min_window_months
+            if new_end_idx >= n_opts:
+                new_end_idx = n_opts - 1
+                new_start_idx = max(0, new_end_idx - self.min_window_months)
+                clamped_index = (new_start_idx, new_end_idx)
+            else:
+                clamped_index = (start_idx, new_end_idx)
+
+        if clamped_index is not None:
+            self.interval_slider.unobserve(self.on_slider_change, names="value")
+            try:
+                self.interval_slider.index = clamped_index
+                clamped_start = self.interval_slider.value[0]
+                clamped_end = self.interval_slider.value[1]
+                self._update_summary(clamped_start, clamped_end)
+            finally:
+                self.interval_slider.observe(self.on_slider_change, names="value")
+            return
+
+        self._update_summary(start, end)
+
+    def get_selected_dates(self):
+        logger.info(
+            "Processing period derived from season window: {} to {}",
+            self._processing_period.start_date,
+            self._processing_period.end_date,
+        )
+        return self._processing_period
+
+    def get_season_window(self):
+        """Return the exact season window selected by the user."""
+
+        return self._season_window
+
+    def get_selection(self) -> SeasonSelection:
+        """Return both the season window and derived processing period."""
+
+        return SeasonSelection(
+            season_window=self._season_window,
+            processing_period=self._processing_period,
+        )
+
+    def _update_summary(self, start: pd.Timestamp, end: pd.Timestamp):
+        season_start = start.replace(day=1)
+        # end is exclusive: the season ends on the last day of the previous month
+        season_end = self._get_last_day_of_month(end - pd.DateOffset(months=1))
+
+        processing_start_month = season_end.replace(day=1) - pd.DateOffset(
+            months=self.processing_months - 1
+        )
+        processing_start = processing_start_month
+        processing_end = season_end
+
+        self._season_window = TemporalContext(
+            season_start.strftime("%Y-%m-%d"), season_end.strftime("%Y-%m-%d")
+        )
+        self._processing_period = TemporalContext(
+            processing_start.strftime("%Y-%m-%d"), processing_end.strftime("%Y-%m-%d")
+        )
+
+        season_range = [
+            (
+                season_start.strftime("%d %b %Y")
+                if self.show_year
+                else season_start.strftime("%d %b")
+            ),
+            (
+                season_end.strftime("%d %b %Y")
+                if self.show_year
+                else season_end.strftime("%d %b")
+            ),
+        ]
+        processing_range = [
+            (
+                processing_start.strftime("%d %b %Y")
+                if self.show_year
+                else processing_start.strftime("%d %b")
+            ),
+            (
+                processing_end.strftime("%d %b %Y")
+                if self.show_year
+                else processing_end.strftime("%d %b")
+            ),
+        ]
+
+        self.html_text.value = (
+            f"<b>Season window:</b> {season_range[0]} - {season_range[1]}"
+            f"<br><b>Processing period (auto):</b> {processing_range[0]} - {processing_range[1]}"
+        )
+
+    @staticmethod
+    def _get_last_day_of_month(date: pd.Timestamp) -> pd.Timestamp:
+        return (date + pd.DateOffset(months=1)) - timedelta(days=1)
+
+    @staticmethod
+    def _get_month_span(start: pd.Timestamp, end: pd.Timestamp) -> int:
+        # end is exclusive, so span = number of steps between handles
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        return max(1, months)
+
+
+class season_slider(date_slider):
+    """Class that provides a slider for selecting a season.
+    Differences with date_slider:
+    -  we only show two years, starting from june and ending in june
+    -  we don't show a year label in the slider, only the month
+    """
+
+    def __init__(self):
+        # Set the start and end dates for the slider
+        # The slider will cover a period from June 2017 to June 2019
+        start_date = pd.to_datetime(("2017-07-01"))
+        end_date = pd.to_datetime(("2019-06-30"))
+
+        # Call the parent class constructor
+        super().__init__(
+            start_date=start_date,
+            end_date=end_date,
+            year_selector=False,
+            show_year=False,
+            display_interval=1,
+            title="Select season:",
+            default_window_months=6,
+        )
