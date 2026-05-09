@@ -500,6 +500,37 @@ def create_app() -> Flask:
             logger.error("Error listing jobs: %s\n%s", exc, traceback.format_exc())
             return jsonify({"error": str(exc)}), 500
 
+    @app.route("/api/jobs/local")
+    @login_required
+    def list_local_jobs():
+        """List jobs from the local job store (with result_path, bounds, etc.)."""
+        logger.info("=== /api/jobs/local called ===")
+
+        try:
+            from tasks import _load_job_store
+
+            local_jobs = _load_job_store()
+            # Convert to a list sorted by created_at descending
+            job_list = []
+            for job_id, info in local_jobs.items():
+                entry = {"job_id": job_id, **info}
+                # Check if the result file still exists on disk
+                result_path = info.get("result_path")
+                if result_path:
+                    entry["result_available"] = Path(result_path).exists()
+                else:
+                    entry["result_available"] = False
+                job_list.append(entry)
+
+            # Sort by created_at descending (newest first)
+            job_list.sort(key=lambda j: j.get("created_at", ""), reverse=True)
+
+            return jsonify({"jobs": job_list})
+
+        except Exception as exc:
+            logger.error("Error listing local jobs: %s\n%s", exc, traceback.format_exc())
+            return jsonify({"error": str(exc)}), 500
+
     # ══════════════════════════════════════════════════════════════════
     #  Tile Serving — On-Demand from GeoTIFF
     # ══════════════════════════════════════════════════════════════════

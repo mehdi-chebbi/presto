@@ -233,6 +233,48 @@ def _save_job_store(jobs: dict) -> None:
         logger.error("Could not save job store: %s", exc)
 
 
+def delete_job(job_id: str) -> dict:
+    """
+    Delete a job from the local job store and remove its result files.
+    Returns a dict with status info.
+    """
+    logger.info("Deleting job %s", job_id)
+
+    jobs = _load_job_store()
+
+    if job_id not in jobs:
+        logger.warning("Job %s not found in store", job_id)
+        return {"error": "Job not found"}
+
+    job_info = jobs.pop(job_id)
+
+    # Remove result directory and files
+    result_path = job_info.get("result_path")
+    deleted_files = False
+    if result_path:
+        result_file = Path(result_path)
+        if result_file.exists():
+            try:
+                # Remove the entire job result directory
+                job_dir = result_file.parent
+                if job_dir.exists() and job_dir.is_dir():
+                    import shutil
+                    shutil.rmtree(job_dir)
+                    logger.info("Deleted result directory: %s", job_dir)
+                    deleted_files = True
+                else:
+                    result_file.unlink()
+                    logger.info("Deleted result file: %s", result_file)
+                    deleted_files = True
+            except Exception as exc:
+                logger.warning("Could not delete result files for %s: %s", job_id, exc)
+
+    _save_job_store(jobs)
+
+    logger.info("Job %s deleted (files removed: %s)", job_id, deleted_files)
+    return {"status": "deleted", "job_id": job_id, "files_removed": deleted_files}
+
+
 # ── openEO Connection ───────────────────────────────────────────────────
 
 def connect_openeo(access_token: str):

@@ -126,9 +126,74 @@
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-      width: 320px;
+      width: 340px;
       max-height: calc(100vh - 90px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Tabs */
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .panel-tab {
+      flex: 1;
+      padding: 12px 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      color: #64748b;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .panel-tab:hover {
+      color: #334155;
+      background: #f8fafc;
+    }
+
+    .panel-tab.active {
+      color: #2d7d3a;
+      border-bottom-color: #2d7d3a;
+      font-weight: 600;
+    }
+
+    .panel-tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 10px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #475569;
+      border-radius: 9px;
+      margin-left: 4px;
+    }
+
+    .panel-tab-badge.has-items {
+      background: #2d7d3a;
+      color: white;
+    }
+
+    .panel-content {
+      display: none;
       overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel-content.active {
+      display: block;
     }
 
     .panel-header {
@@ -349,6 +414,259 @@
       color: #92400e;
     }
 
+    /* ── Job History ─────────────────────────────────────────────────── */
+
+    .history-list {
+      padding: 8px 0;
+    }
+
+    .history-empty {
+      padding: 32px 18px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .history-empty svg {
+      display: block;
+      margin: 0 auto 12px;
+      width: 40px;
+      height: 40px;
+      fill: #cbd5e1;
+    }
+
+    .history-item {
+      padding: 10px 18px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.1s;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-item:hover {
+      background: #f8fafc;
+    }
+
+    .history-item.viewing {
+      background: #f0fdf4;
+      border-left: 3px solid #2d7d3a;
+    }
+
+    .history-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .history-item-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    .history-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .history-status-dot.finished { background: #22c55e; }
+    .history-status-dot.running { background: #3b82f6; animation: pulse-dot 1.5s infinite; }
+    .history-status-dot.queued { background: #f59e0b; }
+    .history-status-dot.error { background: #ef4444; }
+    .history-status-dot.unknown { background: #94a3b8; }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .history-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .history-item-type {
+      display: inline-flex;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: capitalize;
+    }
+
+    .history-item-type.landcover { background: #dbeafe; color: #1d4ed8; }
+    .history-item-type.cropland { background: #dcfce7; color: #166534; }
+    .history-item-type.croptype { background: #fef3c7; color: #92400e; }
+
+    .history-item-date {
+      color: #94a3b8;
+    }
+
+    .history-item-id {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 10px;
+      color: #cbd5e1;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item-result {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    .history-item-result.available { color: #16a34a; }
+    .history-item-result.unavailable { color: #94a3b8; }
+
+    .history-item-result svg {
+      width: 10px;
+      height: 10px;
+      fill: currentColor;
+    }
+
+    .history-refresh {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      color: #2d7d3a;
+      background: #f0fdf4;
+      border: none;
+      border-top: 1px solid #dcfce7;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .history-refresh:hover {
+      background: #dcfce7;
+    }
+
+    .history-refresh.loading svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .history-refresh svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Remove overlay button (floating on map) */
+    .btn-remove-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: #dc2626;
+      background: white;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transition: all 0.15s;
+    }
+
+    .btn-remove-overlay.visible {
+      display: inline-flex;
+    }
+
+    .btn-remove-overlay:hover {
+      background: #fef2f2;
+      border-color: #f87171;
+    }
+
+    .btn-remove-overlay svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Delete button in history items */
+    .history-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .btn-history-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 4px;
+      border: 1px solid;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-history-action svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+    }
+
+    .btn-remove-from-map {
+      color: #b45309;
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .btn-remove-from-map:hover {
+      background: #fef3c7;
+      border-color: #fbbf24;
+    }
+
+    .btn-delete-job {
+      color: #dc2626;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .btn-delete-job:hover {
+      background: #fee2e2;
+      border-color: #f87171;
+    }
+
     /* Responsive */
     @media (max-width: 640px) {
       .side-panel {
@@ -393,165 +711,205 @@
   <div class="map-wrapper">
     <div id="map"></div>
 
+    <!-- Floating "Remove overlay" button -->
+    <button id="remove-overlay-btn" class="btn-remove-overlay" onclick="removeResultFromMap()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+      Remove overlay
+    </button>
+
     <div class="side-panel">
-      <div class="panel-header">
-        <h3>Land Cover Classification</h3>
-        <p>Draw a polygon, pick dates, submit to CDSE</p>
+      <!-- Tab bar -->
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="submit" onclick="switchTab('submit')">
+          Submit Job
+        </button>
+        <button class="panel-tab" data-tab="history" onclick="switchTab('history')">
+          History
+          <span id="history-badge" class="panel-tab-badge">0</span>
+        </button>
       </div>
-      <div class="panel-body">
-        <!-- Product Type -->
-        <div class="form-group">
-          <label for="product-type">Product type</label>
-          <select id="product-type">
-            <option value="landcover">Land cover (10 classes)</option>
-            <option value="cropland">Cropland mask (binary)</option>
-            <option value="croptype">Crop type (multi-class)</option>
-          </select>
-        </div>
 
-        <!-- Date Range -->
-        <div class="form-group">
-          <label for="start-date">Observation start</label>
-          <input type="date" id="start-date" value="2022-11-01" />
-          <div class="form-hint" id="date-hint">Must span a full year for cropland</div>
+      <!-- ── Submit Tab ─────────────────────────────────────────────── -->
+      <div id="tab-submit" class="panel-content active">
+        <div class="panel-header">
+          <h3>Land Cover Classification</h3>
+          <p>Draw a polygon, pick dates, submit to CDSE</p>
         </div>
-        <div class="form-group">
-          <label for="end-date">Observation end</label>
-          <input type="date" id="end-date" value="2023-10-31" />
-        </div>
+        <div class="panel-body">
+          <!-- Product Type -->
+          <div class="form-group">
+            <label for="product-type">Product type</label>
+            <select id="product-type">
+              <option value="landcover">Land cover (10 classes)</option>
+              <option value="cropland">Cropland mask (binary)</option>
+              <option value="croptype">Crop type (multi-class)</option>
+            </select>
+          </div>
 
-        <!-- Submit -->
-        <button id="submit-btn" class="btn-submit" disabled>Draw a polygon first</button>
+          <!-- Date Range -->
+          <div class="form-group">
+            <label for="start-date">Observation start</label>
+            <input type="date" id="start-date" value="2022-11-01" />
+            <div class="form-hint" id="date-hint">Must span a full year for cropland</div>
+          </div>
+          <div class="form-group">
+            <label for="end-date">Observation end</label>
+            <input type="date" id="end-date" value="2023-10-31" />
+          </div>
 
-        <!-- Status -->
-        <div id="status-box" class="status-box">
-          <div id="status-text" class="status-text">Queued...</div>
-          <div class="progress-bar-bg">
-            <div id="progress-fill" class="progress-bar-fill"></div>
+          <!-- Submit -->
+          <button id="submit-btn" class="btn-submit" disabled>Draw a polygon first</button>
+
+          <!-- Status -->
+          <div id="status-box" class="status-box">
+            <div id="status-text" class="status-text">Queued...</div>
+            <div class="progress-bar-bg">
+              <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+
+          <!-- NDVI Legend (shown for demo/fallback) -->
+          <div id="legend-ndvi" class="legend">
+            <div class="legend-title">NDVI (Demo — not classification)</div>
+            <div class="legend-gradient" style="background: linear-gradient(90deg, #8b5a2b, #ffe600, #00b400);"></div>
+            <div class="legend-labels">
+              <span>-1.0 (Bare)</span>
+              <span>0.0</span>
+              <span>1.0 (Dense veg)</span>
+            </div>
+          </div>
+
+          <!-- Landcover Legend (class order matches model output indices) -->
+          <div id="legend-landcover" class="legend">
+            <div class="legend-title">Land Cover Classification</div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #ffff00;"></div>
+              <span>Temporary Crops</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #adff2f;"></div>
+              <span>Temporary Grasses</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #d2b48c;"></div>
+              <span>Bare / Sparse Vegetation</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #ffa500;"></div>
+              <span>Permanent Crops / Orchards</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #90ee90;"></div>
+              <span>Grasslands</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #00aaaa;"></div>
+              <span>Wetlands</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #bdb878;"></div>
+              <span>Shrubland</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #006400;"></div>
+              <span>Trees / Forest</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #c83232;"></div>
+              <span>Built-up</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #0064c8;"></div>
+              <span>Water</span>
+            </div>
+          </div>
+
+          <!-- Cropland Legend -->
+          <div id="legend-cropland" class="legend">
+            <div class="legend-title">Cropland Classification</div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #228b22;"></div>
+              <span>Cropland</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
+              <span>Non-cropland (transparent)</span>
+            </div>
+          </div>
+
+          <!-- Croptype Legend -->
+          <div id="legend-croptype" class="legend">
+            <div class="legend-title">Crop Type Classification</div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #ffc800;"></div>
+              <span>Maize</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #b48246;"></div>
+              <span>Wheat</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #dcb482;"></div>
+              <span>Barley</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #b4dc32;"></div>
+              <span>Rapeseed / Canola</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #ffa500;"></div>
+              <span>Sunflower</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #009600;"></div>
+              <span>Soybean</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #a06432;"></div>
+              <span>Potato</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #64b4ff;"></div>
+              <span>Sugar beet</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #50c878;"></div>
+              <span>Temporary grassland</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #0064c8;"></div>
+              <span>Rice</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #c864c8;"></div>
+              <span>Other crop</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
+              <span>Non-cropland / no data</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- NDVI Legend (shown for demo/fallback) -->
-        <div id="legend-ndvi" class="legend">
-          <div class="legend-title">NDVI (Demo — not classification)</div>
-          <div class="legend-gradient" style="background: linear-gradient(90deg, #8b5a2b, #ffe600, #00b400);"></div>
-          <div class="legend-labels">
-            <span>-1.0 (Bare)</span>
-            <span>0.0</span>
-            <span>1.0 (Dense veg)</span>
+      <!-- ── History Tab ─────────────────────────────────────────────── -->
+      <div id="tab-history" class="panel-content">
+        <div id="history-list" class="history-list">
+          <div class="history-empty">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+            No jobs yet.<br>Submit your first classification!
           </div>
         </div>
-
-        <!-- Landcover Legend (class order matches model output indices) -->
-        <div id="legend-landcover" class="legend">
-          <div class="legend-title">Land Cover Classification</div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #ffff00;"></div>
-            <span>Temporary Crops</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #adff2f;"></div>
-            <span>Temporary Grasses</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #d2b48c;"></div>
-            <span>Bare / Sparse Vegetation</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #ffa500;"></div>
-            <span>Permanent Crops / Orchards</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #90ee90;"></div>
-            <span>Grasslands</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #00aaaa;"></div>
-            <span>Wetlands</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #bdb878;"></div>
-            <span>Shrubland</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #006400;"></div>
-            <span>Trees / Forest</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #c83232;"></div>
-            <span>Built-up</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #0064c8;"></div>
-            <span>Water</span>
-          </div>
-        </div>
-
-        <!-- Cropland Legend -->
-        <div id="legend-cropland" class="legend">
-          <div class="legend-title">Cropland Classification</div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #228b22;"></div>
-            <span>Cropland</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
-            <span>Non-cropland (transparent)</span>
-          </div>
-        </div>
-
-        <!-- Croptype Legend -->
-        <div id="legend-croptype" class="legend">
-          <div class="legend-title">Crop Type Classification</div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #ffc800;"></div>
-            <span>Maize</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #b48246;"></div>
-            <span>Wheat</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #dcb482;"></div>
-            <span>Barley</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #b4dc32;"></div>
-            <span>Rapeseed / Canola</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #ffa500;"></div>
-            <span>Sunflower</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #009600;"></div>
-            <span>Soybean</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #a06432;"></div>
-            <span>Potato</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #64b4ff;"></div>
-            <span>Sugar beet</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #50c878;"></div>
-            <span>Temporary grassland</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #0064c8;"></div>
-            <span>Rice</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #c864c8;"></div>
-            <span>Other crop</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background: #e2e8f0; border: 1px dashed #cbd5e1;"></div>
-            <span>Non-cropland / no data</span>
-          </div>
-        </div>
+        <button id="history-refresh-btn" class="history-refresh" onclick="refreshHistory()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+          Refresh
+        </button>
       </div>
     </div>
   </div>
@@ -568,10 +926,31 @@
     // ── Map Setup ───────────────────────────────────────────────────────
     const map = L.map('map').setView([50.3, 6.73], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // ── Satellite base map (ESRI World Imagery) ──────────────────────
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; Esri, Maxar, Earthstar Geographics'
     }).addTo(map);
+
+    // Optional: labels overlay on top of satellite
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '',
+      pane: 'overlayPane'
+    }).addTo(map);
+
+    // ── Override Leaflet.Draw area display to use km² ───────────────────
+    L.GeometryUtil.readableArea = function(area, isMetric) {
+      if (!isMetric) {
+        // Imperial
+        if (area >= 2589998.46) return (area / 2589998.46).toFixed(2) + ' mi²';
+        return (area / 4046.86).toFixed(2) + ' ac';
+      }
+      // Metric — always show km²
+      var km2 = area / 1e6;
+      if (km2 >= 1) return km2.toFixed(2) + ' km²';
+      return (area / 1e6).toFixed(4) + ' km²';
+    };
 
     // ── Draw Control ────────────────────────────────────────────────────
     const drawnItems = new L.FeatureGroup();
@@ -580,7 +959,7 @@
     const drawControl = new L.Control.Draw({
       draw: {
         polygon: { allowIntersection: false, showArea: true },
-        rectangle: true,
+        rectangle: { showArea: true },
         polyline: false,
         circle: false,
         marker: false,
@@ -594,6 +973,7 @@
     let currentProductType = 'landcover';
     let resultTileLayer = null;
     let pollInterval = null;
+    let viewingJobId = null;  // Track which job is currently on the map
 
     map.on(L.Draw.Event.CREATED, function (e) {
       drawnItems.clearLayers();
@@ -604,6 +984,18 @@
       btn.disabled = false;
       btn.textContent = 'Submit Classification Job';
     });
+
+    // ── Tab Switching ───────────────────────────────────────────────────
+    function switchTab(tabName) {
+      document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      if (tabName === 'history') {
+        refreshHistory();
+      }
+    }
 
     // ── Product Type Change ─────────────────────────────────────────────
     document.getElementById('product-type').addEventListener('change', function () {
@@ -701,6 +1093,8 @@
         if (data.job_id) {
           showToast('Job submitted! ID: ' + data.job_id);
           startPolling(data.job_id, productType);
+          // Refresh history badge
+          refreshHistoryBadge();
         } else {
           showToast('No job_id returned. Check server logs.');
           btn.disabled = false;
@@ -789,6 +1183,7 @@
         progressFill.style.width = '100%';
 
         showResultTiles(jobId, dlData.bounds);
+        viewingJobId = jobId;
 
         // Step 3: Show appropriate legend based on actual backend response
         const isWC = dlData.worldcereal === true;
@@ -807,6 +1202,12 @@
         btn.disabled = false;
 
         showToast('Classification result loaded!', 4000);
+
+        // Refresh history
+        refreshHistoryBadge();
+        if (document.getElementById('tab-history').classList.contains('active')) {
+          refreshHistory();
+        }
 
       } catch (err) {
         statusText.textContent = 'Download error: ' + err.message;
@@ -832,6 +1233,9 @@
 
       resultTileLayer.addTo(map);
 
+      // Show the floating "Remove overlay" button
+      document.getElementById('remove-overlay-btn').classList.add('visible');
+
       if (bounds) {
         const corner1 = L.latLng(bounds.north, bounds.west);
         const corner2 = L.latLng(bounds.south, bounds.east);
@@ -840,7 +1244,226 @@
       }
     }
 
-    // ── Initialize date hint ────────────────────────────────────────────
+    // ── Remove Result Overlay from Map ──────────────────────────────────
+    function removeResultFromMap() {
+      if (resultTileLayer) {
+        map.removeLayer(resultTileLayer);
+        resultTileLayer = null;
+      }
+      viewingJobId = null;
+      showLegend(null, false);
+
+      // Hide the floating "Remove overlay" button
+      document.getElementById('remove-overlay-btn').classList.remove('visible');
+
+      // Update history highlighting
+      document.querySelectorAll('.history-item').forEach(el => el.classList.remove('viewing'));
+      // Re-render history to update the "Remove from map" button visibility
+      if (document.getElementById('tab-history').classList.contains('active')) {
+        refreshHistory();
+      }
+
+      showToast('Overlay removed from map');
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  JOB HISTORY
+    // ══════════════════════════════════════════════════════════════════
+
+    function formatDate(isoStr) {
+      if (!isoStr) return 'Unknown';
+      try {
+        const d = new Date(isoStr);
+        const now = new Date();
+        const diff = now - d;
+
+        // Less than 1 minute
+        if (diff < 60000) return 'Just now';
+        // Less than 1 hour
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        // Less than 24 hours
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        // Less than 7 days
+        if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
+        // Otherwise show date
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch {
+        return isoStr;
+      }
+    }
+
+    function renderHistoryList(jobs) {
+      const container = document.getElementById('history-list');
+
+      if (!jobs || jobs.length === 0) {
+        container.innerHTML = `
+          <div class="history-empty">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+            No jobs yet.<br>Submit your first classification!
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      for (const job of jobs) {
+        const statusClass = job.status || 'unknown';
+        const isViewing = viewingJobId === job.job_id;
+        const pType = job.product_type || 'cropland';
+        const title = job.title || (pType.charAt(0).toUpperCase() + pType.slice(1) + ' classification');
+        const resultAvailable = job.result_available;
+        const createdAt = formatDate(job.created_at);
+        const dateRange = (job.start_date && job.end_date)
+          ? `${job.start_date} → ${job.end_date}`
+          : '';
+
+        html += `
+          <div class="history-item ${isViewing ? 'viewing' : ''}"
+               onclick="loadJobOnMap('${job.job_id}', '${pType}', ${job.worldcereal ? 'true' : 'false'})">
+            <div class="history-item-top">
+              <span class="history-item-title">${escapeHtml(title)}</span>
+              <span class="history-status-dot ${statusClass}" title="${statusClass}"></span>
+            </div>
+            <div class="history-item-meta">
+              <span class="history-item-type ${pType}">${pType}</span>
+              <span class="history-item-date">${createdAt}</span>
+            </div>
+            ${dateRange ? `<div class="history-item-meta" style="margin-top:2px">${dateRange}</div>` : ''}
+            <div class="history-item-id">${job.job_id}</div>
+            <div class="history-item-result ${resultAvailable ? 'available' : 'unavailable'}">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                ${resultAvailable
+                  ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'
+                  : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>'}
+              </svg>
+              ${resultAvailable ? 'Result available' : (statusClass === 'finished' ? 'Not downloaded yet' : 'No result')}
+            </div>
+            <div class="history-item-actions" onclick="event.stopPropagation()">
+              ${isViewing ? `
+              <button class="btn-history-action btn-remove-from-map" onclick="removeResultFromMap()">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                Remove from map
+              </button>` : ''}
+              <button class="btn-history-action btn-delete-job" onclick="deleteJob('${job.job_id}')">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                Delete
+              </button>
+            </div>
+          </div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function refreshHistory() {
+      const btn = document.getElementById('history-refresh-btn');
+      btn.classList.add('loading');
+
+      try {
+        const res = await fetch('/api/jobs/local');
+        const data = await res.json();
+
+        if (data.error) {
+          showToast('Error loading history: ' + data.error);
+          return;
+        }
+
+        const jobs = data.jobs || [];
+        renderHistoryList(jobs);
+        updateHistoryBadge(jobs.length);
+
+      } catch (err) {
+        showToast('Failed to load history');
+        console.error('History error:', err);
+      } finally {
+        btn.classList.remove('loading');
+      }
+    }
+
+    async function refreshHistoryBadge() {
+      try {
+        const res = await fetch('/api/jobs/local');
+        const data = await res.json();
+        if (data.jobs) {
+          updateHistoryBadge(data.jobs.length);
+        }
+      } catch {}
+    }
+
+    function updateHistoryBadge(count) {
+      const badge = document.getElementById('history-badge');
+      badge.textContent = count;
+      if (count > 0) {
+        badge.classList.add('has-items');
+      } else {
+        badge.classList.remove('has-items');
+      }
+    }
+
+    // ── Load a job's result on the map ──────────────────────────────────
+    async function loadJobOnMap(jobId, productType, isWorldcereal) {
+      showToast('Loading job result...');
+
+      // Check if we need to download first
+      try {
+        // Try downloading (will be instant if already downloaded)
+        const dlRes = await fetch('/api/download/' + jobId);
+        const dlData = await dlRes.json();
+
+        if (dlData.error) {
+          showToast('Error: ' + dlData.error);
+          return;
+        }
+
+        // Show on map
+        viewingJobId = jobId;
+        showResultTiles(jobId, dlData.bounds);
+        showLegend(dlData.product_type || productType, isWorldcereal);
+
+        // Re-render history to show the "Remove from map" button on the active item
+        refreshHistory();
+
+        showToast('Result loaded on map!', 3000);
+      } catch (err) {
+        showToast('Failed to load result: ' + err.message);
+      }
+    }
+
+    // ── Delete a Job from History ─────────────────────────────────────
+    async function deleteJob(jobId) {
+      if (!confirm('Delete this job and its result files? This cannot be undone.')) return;
+
+      try {
+        const res = await fetch('/api/jobs/' + jobId, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showToast('Error deleting job: ' + (data.error || 'Unknown error'));
+          return;
+        }
+
+        // If the deleted job was being viewed, remove it from map
+        if (viewingJobId === jobId) {
+          removeResultFromMap();
+        }
+
+        showToast('Job deleted');
+        refreshHistory();
+        refreshHistoryBadge();
+      } catch (err) {
+        showToast('Failed to delete job: ' + err.message);
+      }
+    }
+
+    // ── Initialize ──────────────────────────────────────────────────────
     updateDateHint();
+    refreshHistoryBadge();
   </script>
 {% endblock %}
