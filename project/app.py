@@ -204,6 +204,82 @@ def create_app() -> Flask:
                     pass
         return response
 
+    # ── Proactive Token Refresh (before_request) ─────────────────────
+
+    # Routes that should be skipped from auto-refresh
+    _REFRESH_SKIP_PATHS = {"/login", "/auth/login", "/auth/logout", "/favicon.ico"}
+
+    @app.before_request
+    def auto_refresh_token():
+        """Proactively refresh the access token before it expires."""
+        # Skip for non-authenticated routes
+        if request.path in _REFRESH_SKIP_PATHS:
+            return None
+        if request.path.startswith("/static/") or request.path.startswith("/tiles/"):
+            return None
+
+        # Only act if user has a session
+        if "user" not in session:
+            return None
+
+        # Check if token is still valid
+        token_expiry = session.get("token_expiry", 0)
+        if time.time() < token_expiry:
+            return None  # Token still valid, nothing to do
+
+        # Token expired or about to expire — try to refresh
+        refresh_token = session.get("refresh_token")
+        if not refresh_token:
+            logger.warning("Token expired and no refresh_token available — redirecting to login")
+            session.clear()
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Session expired. Please log in again."}), 401
+            return redirect(url_for("login_page"))
+
+        try:
+            logger.info("Access token expired — refreshing proactively")
+            token_data = refresh_cdse_token(refresh_token)
+            session["access_token"] = token_data.get("access_token", "")
+            new_refresh = token_data.get("refresh_token")
+            if new_refresh:
+                session["refresh_token"] = new_refresh
+            session["token_expiry"] = time.time() + token_data.get("expires_in", 600) - 60
+            session["refresh_expires_in"] = token_data.get("refresh_expires_in")
+            logger.info("Proactive token refresh successful")
+        except Exception as exc:
+            logger.error("Proactive token refresh failed: %s — redirecting to login", exc)
+            session.clear()
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Session expired. Please log in again."}), 401
+            return redirect(url_for("login_page"))
+
+    # ── 401 Retry Helper for API Routes ─────────────────────────────
+
+    def _refresh_and_retry(access_token, api_func, *args, **kwargs):
+        """
+        Retry an API call once after refreshing the token.
+        Used as a safety net when the before_request hook misses an expiry edge case.
+        """
+        refresh_token = session.get("refresh_token")
+        if not refresh_token:
+            return None  # Can't retry, let the original error propagate
+
+        logger.warning("API call may have failed with auth error — attempting token refresh and retry")
+        try:
+            token_data = refresh_cdse_token(refresh_token)
+            session["access_token"] = token_data.get("access_token", "")
+            new_refresh = token_data.get("refresh_token")
+            if new_refresh:
+                session["refresh_token"] = new_refresh
+            session["token_expiry"] = time.time() + token_data.get("expires_in", 600) - 60
+            session["refresh_expires_in"] = token_data.get("refresh_expires_in")
+
+            # Retry with the new access token
+            return api_func(session["access_token"], *args, **kwargs)
+        except Exception as retry_exc:
+            logger.error("Retry after refresh also failed: %s", retry_exc)
+            return None
+
     # ── Login Required Decorator ─────────────────────────────────────
 
     def login_required(f):
@@ -254,6 +330,14 @@ def create_app() -> Flask:
             }
             session["access_token"] = token_data.get("access_token", "")
             session["refresh_token"] = token_data.get("refresh_token", "")
+            session["token_expiry"] = time.time() + token_data.get("expires_in", 600) - 60
+            session["refresh_expires_in"] = token_data.get("refresh_expires_in")
+            logger.info(
+                "Token stored: expires_in=%ss, refresh_expires_in=%ss, offline=%s",
+                token_data.get("expires_in"),
+                token_data.get("refresh_expires_in"),
+                token_data.get("refresh_expires_in") == 0,
+            )
 
             logger.info("Login successful for '%s' — redirecting to map", username)
             return redirect(url_for("map_page"))
@@ -280,8 +364,25 @@ def create_app() -> Flask:
 
     @app.route("/auth/logout", methods=["POST", "GET"])
     def auth_logout():
-        """Clear local session and redirect to login page."""
+        """Clear local session and invalidate CDSE remote session."""
         username = session.get("user", {}).get("preferred_username", "unknown")
+        refresh_token = session.get("refresh_token")
+
+        # Invalidate the CDSE remote session
+        if refresh_token:
+            try:
+                http_requests.post(
+                    Config.CDSE_LOGOUT_ENDPOINT,
+                    data={
+                        "client_id": "cdse-public",
+                        "refresh_token": refresh_token,
+                    },
+                    timeout=5,
+                )
+                logger.info("CDSE remote session invalidated for '%s'", username)
+            except Exception as exc:
+                logger.warning("Failed to invalidate CDSE session (non-critical): %s", exc)
+
         session.clear()
         logger.info("User '%s' logged out", username)
         return redirect(url_for("login_page"))
@@ -299,7 +400,13 @@ def create_app() -> Flask:
     @app.route("/auth/refresh")
     @login_required
     def auth_refresh():
-        """Try to refresh the access token. Returns JSON status."""
+        """Refresh the access token if it's about to expire. Returns JSON status."""
+        # Only refresh if token expires within the next 2 minutes
+        # This avoids unnecessary refresh token rotations when the heartbeat calls this endpoint
+        token_expiry = session.get("token_expiry", 0)
+        if time.time() < token_expiry - 120:
+            return jsonify({"status": "ok", "message": "Token still valid"})
+
         refresh_token = session.get("refresh_token")
         if not refresh_token:
             logger.warning("Token refresh requested but no refresh_token in session")
@@ -310,7 +417,10 @@ def create_app() -> Flask:
             new_refresh = token_data.get("refresh_token")
             if new_refresh:
                 session["refresh_token"] = new_refresh
-            logger.info("Token refreshed successfully")
+            session["token_expiry"] = time.time() + token_data.get("expires_in", 600) - 60
+            session["refresh_expires_in"] = token_data.get("refresh_expires_in")
+            logger.info("Token refreshed successfully (expires_in=%ss, refresh_expires_in=%ss)",
+                        token_data.get("expires_in"), token_data.get("refresh_expires_in"))
             return jsonify({"status": "ok"})
         except Exception as exc:
             logger.error("Token refresh failed: %s", exc)
@@ -405,6 +515,17 @@ def create_app() -> Flask:
             return jsonify({"error": str(exc)}), 400
 
         except RuntimeError as exc:
+            error_str = str(exc).lower()
+            if "401" in error_str or "unauthorized" in error_str or "authentication" in error_str:
+                # 401 safety net: refresh token and retry once
+                retry_result = _refresh_and_retry(
+                    access_token, submit_classification_job,
+                    geometry=geometry, start_date=start_date, end_date=end_date, product_type=product_type,
+                )
+                if retry_result is not None:
+                    logger.info("Job submitted successfully on retry! job_id=%s", retry_result.get("job_id"))
+                    return jsonify(retry_result), 202
+
             logger.error("Job submission runtime error: %s\n%s", exc, traceback.format_exc())
             return jsonify({"error": str(exc)}), 502
 
@@ -436,6 +557,13 @@ def create_app() -> Flask:
             return jsonify(result)
 
         except Exception as exc:
+            error_str = str(exc).lower()
+            if "401" in error_str or "unauthorized" in error_str:
+                # 401 safety net: refresh token and retry once
+                retry_result = _refresh_and_retry(access_token, get_job_status, job_id)
+                if retry_result is not None:
+                    return jsonify(retry_result)
+
             logger.error("Error checking job status:\n%s", traceback.format_exc())
             return jsonify({
                 "job_id": job_id,
@@ -474,6 +602,18 @@ def create_app() -> Flask:
             return jsonify(result)
 
         except Exception as exc:
+            error_str = str(exc).lower()
+            if "401" in error_str or "unauthorized" in error_str:
+                # 401 safety net: refresh token and retry once
+                retry_result = _refresh_and_retry(access_token, download_job_result, job_id)
+                if retry_result is not None:
+                    # Add product_type and worldcereal flag for frontend legend
+                    local_jobs = _load_job_store()
+                    job_info = local_jobs.get(job_id, {})
+                    retry_result["product_type"] = job_info.get("product_type", "cropland")
+                    retry_result["worldcereal"] = job_info.get("worldcereal", False)
+                    return jsonify(retry_result)
+
             logger.error("Error downloading results:\n%s", traceback.format_exc())
             return jsonify({
                 "job_id": job_id,

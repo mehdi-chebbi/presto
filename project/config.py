@@ -44,7 +44,7 @@ class Config:
         "/auth/realms/CDSE/.well-known/openid-configuration"
     )
 
-    CDSE_SCOPES = "openid profile email"
+    CDSE_SCOPES = "openid profile email offline_access"
 
     # ── Flask settings ──────────────────────────────────────────────────
     APP_HOST = os.environ.get("APP_HOST", "localhost")

@@ -1462,6 +1462,26 @@
       }
     }
 
+    // ── Token Heartbeat (keeps session alive during long jobs) ────────
+    // Calls /auth/refresh every 5 minutes. The backend only actually
+    // refreshes if the token is within 2 minutes of expiry, so this
+    // avoids unnecessary refresh token rotations while still keeping
+    // the session alive when the user is idle (e.g. waiting for a job).
+    setInterval(async () => {
+      try {
+        const res = await fetch('/auth/refresh');
+        if (res.status === 401) {
+          // Refresh token expired — must re-login
+          clearInterval(pollInterval);
+          showToast('Session expired. Please log in again.', 5000);
+          setTimeout(() => { window.location.href = '/login'; }, 2000);
+        }
+      } catch (err) {
+        // Network error — silently ignore, will retry next interval
+        console.warn('Token heartbeat failed:', err.message);
+      }
+    }, 5 * 60 * 1000);  // every 5 minutes
+
     // ── Initialize ──────────────────────────────────────────────────────
     updateDateHint();
     refreshHistoryBadge();
